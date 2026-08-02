@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+
+# Prisma generated files (if using custom output)
+src/generated/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
