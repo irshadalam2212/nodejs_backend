@@ -52,3 +52,28 @@ export const getUserById = async (id: number) => {
   });
   return user;
 };
+
+export const updateUserRole = async (id: number, role: "USER" | "ADMIN") => {
+  return prisma.user.update({
+    where: { id },
+    data: { role },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+};
+
+export const deleteUser = async (id: number) => {
+  const user = await prisma.user.delete({
+    where: { id },
+    select: {
+      id: true,
+    },
+  });
+  return user;
+};
