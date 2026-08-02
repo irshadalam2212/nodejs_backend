@@ -1,4 +1,5 @@
 import prisma from "../../config/prisma";
+import { AppError } from "../../errors/AppError";
 import { CreateUserInput } from "./user.interface";
 import bcrypt from "bcrypt";
 
@@ -50,6 +51,9 @@ export const getUserById = async (id: number) => {
       updatedAt: true,
     },
   });
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
   return user;
 };
 

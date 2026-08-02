@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import userRoutes from "./modules/user/user.routes";
+import { globalErrorHandler } from "./middleware/globalErrorHandler";
 
 const app = express();
 
@@ -11,5 +12,8 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use("/api/v1/users", userRoutes);
+
+//global error handler
+app.use(globalErrorHandler);
 
 export default app;

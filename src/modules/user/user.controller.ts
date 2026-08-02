@@ -31,13 +31,6 @@ export const getUserByIdController = async (req: Request, res: Response) => {
   const { id } = req.params;
   const user = await getUserById(Number(id));
 
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: "User not found",
-    });
-  }
-
   return res.status(200).json({
     success: true,
     message: "User retrieved successfully",
