@@ -9,18 +9,41 @@ import {
 import { validate } from "../../middleware/validate";
 import { createUserSchema } from "./user.validation";
 import { authenticate } from "../../middleware/auth.middleware";
+import { authorize } from "../../middleware/authorize.middleware";
+import { user_role } from "@prisma/client";
 
 const router = Router();
 
-router.get("/", authenticate, getAllUsersController);
-router.get("/:id", authenticate, getUserByIdController);
+router.get(
+  "/",
+  authenticate,
+  authorize(user_role.ADMIN),
+  getAllUsersController,
+);
+router.get(
+  "/:id",
+  authenticate,
+  authorize(user_role.ADMIN),
+  getUserByIdController,
+);
 router.post(
   "/",
   validate(createUserSchema),
   authenticate,
+  authorize(user_role.ADMIN),
   createUserController,
 );
-router.patch("/:id/role", authenticate, updateUserRoleController);
-router.delete("/:id", authenticate, deleteUserController);
+router.patch(
+  "/:id/role",
+  authenticate,
+  authorize(user_role.ADMIN),
+  updateUserRoleController,
+);
+router.delete(
+  "/:id",
+  authenticate,
+  authorize(user_role.ADMIN),
+  deleteUserController,
+);
 
 export default router;
