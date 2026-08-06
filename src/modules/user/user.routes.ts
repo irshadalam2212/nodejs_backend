@@ -8,13 +8,19 @@ import {
 } from "./user.controller";
 import { validate } from "../../middleware/validate";
 import { createUserSchema } from "./user.validation";
+import { authenticate } from "../../middleware/auth.middleware";
 
 const router = Router();
 
-router.post("/", validate(createUserSchema), createUserController);
-router.patch("/:id/role", updateUserRoleController);
-router.delete("/:id", deleteUserController);
-router.get("/", getAllUsersController);
-router.get("/:id", getUserByIdController);
+router.get("/", authenticate, getAllUsersController);
+router.get("/:id", authenticate, getUserByIdController);
+router.post(
+  "/",
+  validate(createUserSchema),
+  authenticate,
+  createUserController,
+);
+router.patch("/:id/role", authenticate, updateUserRoleController);
+router.delete("/:id", authenticate, deleteUserController);
 
 export default router;
