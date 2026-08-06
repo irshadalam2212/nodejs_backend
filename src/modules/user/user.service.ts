@@ -4,24 +4,16 @@ import { CreateUserInput } from "./user.interface";
 import bcrypt from "bcrypt";
 
 export const createUser = async (data: CreateUserInput) => {
-  const hashedPassword = await bcrypt.hash(data.password, 10);
-
-  const user = await prisma.user.create({
-    data: {
-      ...data,
-      password: hashedPassword,
-    },
+  return await prisma.user.create({
+    data,
     select: {
       id: true,
       name: true,
       email: true,
       role: true,
       createdAt: true,
-      updatedAt: true,
     },
   });
-
-  return user;
 };
 
 export const getAllUsers = async () => {

@@ -1,5 +1,6 @@
 import express, { Request, Response } from "express";
 import userRoutes from "./modules/user/user.routes";
+import authRoutes from "./modules/auth/auth.routes";
 import { globalErrorHandler } from "./middleware/globalErrorHandler";
 
 const app = express();
@@ -12,6 +13,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/auth", authRoutes);
 
 //global error handler
 app.use(globalErrorHandler);

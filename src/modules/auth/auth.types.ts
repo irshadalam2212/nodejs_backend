@@ -1,6 +1,5 @@
-export interface CreateUserInput {
+export interface RegisterInput {
   name: string;
   email: string;
   password: string;
-  role: string;
 }
