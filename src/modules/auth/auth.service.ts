@@ -3,9 +3,8 @@ import { AppError } from "../../errors/AppError";
 import { USER_ROLE } from "../../types/types";
 import { createUser } from "../user/user.service";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { RegisterInput, loginInput } from "./auth.types";
-import { generateAccessToken } from "../../utils/jwt";
+import { generateAccessToken, generateRefreshToken } from "../../utils/jwt";
 
 export const findUserByEmail = async (email: string) => {
   return await prisma.user.findUnique({
@@ -59,9 +58,21 @@ export const login = async (data: loginInput) => {
     role: user.role,
   });
 
+  //refresh token
+  const refreshToken = generateRefreshToken({
+    userId: user.id,
+  });
+
+  await saveRefreshToken(
+    refreshToken,
+    user.id,
+    new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+  );
+
   //return response
   return {
     accessToken,
+    refreshToken,
     user: {
       id: user.id,
       name: user.name,
@@ -69,4 +80,18 @@ export const login = async (data: loginInput) => {
       role: user.role,
     },
   };
+};
+
+export const saveRefreshToken = async (
+  token: string,
+  userId: number,
+  expiresAt: Date,
+) => {
+  return prisma.refreshToken.create({
+    data: {
+      token,
+      userId,
+      expiresAt,
+    },
+  });
 };
