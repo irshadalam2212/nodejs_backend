@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { login, register } from "./auth.service";
+import { login, refreshAccessToken, register } from "./auth.service";
 
 export const registerController = async (req: Request, res: Response) => {
   const user = await register(req.body);
@@ -17,6 +17,19 @@ export const loginController = async (req: Request, res: Response) => {
   return res.status(200).json({
     success: true,
     message: "Login successful",
+    data: result,
+  });
+};
+
+export const refreshTokenController = async (req: Request, res: Response) => {
+  console.log(req.body);
+  const { refreshToken } = req.body;
+
+  const result = await refreshAccessToken(refreshToken);
+
+  return res.status(200).json({
+    success: true,
+    message: "Access token refreshed successfully.",
     data: result,
   });
 };

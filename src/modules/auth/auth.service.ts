@@ -4,12 +4,24 @@ import { USER_ROLE } from "../../types/types";
 import { createUser } from "../user/user.service";
 import bcrypt from "bcrypt";
 import { RegisterInput, loginInput } from "./auth.types";
-import { generateAccessToken, generateRefreshToken } from "../../utils/jwt";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from "../../utils/jwt";
 
 export const findUserByEmail = async (email: string) => {
   return await prisma.user.findUnique({
     where: {
       email,
+    },
+  });
+};
+
+export const findUserById = async (id: number) => {
+  return await prisma.user.findUnique({
+    where: {
+      id,
     },
   });
 };
@@ -94,4 +106,42 @@ export const saveRefreshToken = async (
       expiresAt,
     },
   });
+};
+
+export const findRefreshToken = async (token: string) => {
+  return prisma.refreshToken.findUnique({
+    where: {
+      token,
+    },
+  });
+};
+
+export const refreshAccessToken = async (refreshToken: string) => {
+  // Verify JWT
+  const decoded = verifyRefreshToken(refreshToken);
+
+  // Check DB
+  const storedToken = await findRefreshToken(refreshToken);
+
+  if (!storedToken) {
+    throw new AppError(401, "Invalid refresh token");
+  }
+
+  // Find User
+  const user = await findUserById(decoded.userId);
+
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+
+  // Generate New Access Token
+  const accessToken = generateAccessToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  });
+
+  return {
+    accessToken,
+  };
 };

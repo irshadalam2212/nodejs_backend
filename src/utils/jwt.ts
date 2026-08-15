@@ -18,7 +18,7 @@ export const generateAccessToken = (payload: JwtPayload): string => {
 };
 
 export const generateRefreshToken = (payload: { userId: number }) => {
-  return jwt.sign(payload, process.env.JWT_SECRET as Secret, {
+  return jwt.sign(payload, process.env.JWT_REFRESH_SECRET as Secret, {
     expiresIn: process.env.JWT_REFRESH_EXPIRES_IN as SignOptions["expiresIn"],
   });
 };
