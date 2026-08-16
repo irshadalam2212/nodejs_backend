@@ -10,6 +10,7 @@ import {
   verifyRefreshToken,
 } from "../../utils/jwt";
 
+//find user by email
 export const findUserByEmail = async (email: string) => {
   return await prisma.user.findUnique({
     where: {
@@ -18,6 +19,7 @@ export const findUserByEmail = async (email: string) => {
   });
 };
 
+//find user by id
 export const findUserById = async (id: number) => {
   return await prisma.user.findUnique({
     where: {
@@ -26,6 +28,40 @@ export const findUserById = async (id: number) => {
   });
 };
 
+//delete refresh token
+export const deleteRefreshToken = async (token: string) => {
+  return await prisma.refreshToken.delete({
+    where: {
+      token,
+    },
+  });
+};
+
+//find refresh token
+export const findRefreshToken = async (token: string) => {
+  return prisma.refreshToken.findUnique({
+    where: {
+      token,
+    },
+  });
+};
+
+// save refresh tokenin refreshToken table
+export const saveRefreshToken = async (
+  token: string,
+  userId: number,
+  expiresAt: Date,
+) => {
+  return prisma.refreshToken.create({
+    data: {
+      token,
+      userId,
+      expiresAt,
+    },
+  });
+};
+
+//register service
 export const register = async (data: RegisterInput) => {
   //check existing user
   const existingUser = await findUserByEmail(data.email);
@@ -48,6 +84,7 @@ export const register = async (data: RegisterInput) => {
   return user;
 };
 
+//login service
 export const login = async (data: loginInput) => {
   //find user
   const user = await findUserByEmail(data.email);
@@ -94,28 +131,7 @@ export const login = async (data: loginInput) => {
   };
 };
 
-export const saveRefreshToken = async (
-  token: string,
-  userId: number,
-  expiresAt: Date,
-) => {
-  return prisma.refreshToken.create({
-    data: {
-      token,
-      userId,
-      expiresAt,
-    },
-  });
-};
-
-export const findRefreshToken = async (token: string) => {
-  return prisma.refreshToken.findUnique({
-    where: {
-      token,
-    },
-  });
-};
-
+//refreshToken service
 export const refreshAccessToken = async (refreshToken: string) => {
   // Verify JWT
   const decoded = verifyRefreshToken(refreshToken);
@@ -141,7 +157,31 @@ export const refreshAccessToken = async (refreshToken: string) => {
     role: user.role,
   });
 
+  const newRefreshToken = generateRefreshToken({
+    userId: user.id,
+  });
+
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
+  await prisma.$transaction([
+    prisma.refreshToken.delete({
+      where: {
+        id: storedToken.id,
+      },
+    }),
+
+    prisma.refreshToken.create({
+      data: {
+        token: newRefreshToken,
+        userId: user.id,
+        expiresAt,
+      },
+    }),
+  ]);
+
   return {
     accessToken,
+    refreshToken: newRefreshToken,
   };
 };

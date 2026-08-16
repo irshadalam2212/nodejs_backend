@@ -22,7 +22,7 @@ export const loginController = async (req: Request, res: Response) => {
 };
 
 export const refreshTokenController = async (req: Request, res: Response) => {
-  console.log(req.body);
+
   const { refreshToken } = req.body;
 
   const result = await refreshAccessToken(refreshToken);
