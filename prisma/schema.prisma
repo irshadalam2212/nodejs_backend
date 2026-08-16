@@ -26,10 +26,14 @@ model user {
 }
 
 model refreshToken {
-  id        Int      @id @default(autoincrement())
-  token     String   @unique
-  userId    Int
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     Int    @id @default(autoincrement())
+  token  String @unique
+  userId Int
+  user   user   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  familyId  String
   expiresAt DateTime
+  revokedAt DateTime?
+
   createdAt DateTime @default(now())
 }

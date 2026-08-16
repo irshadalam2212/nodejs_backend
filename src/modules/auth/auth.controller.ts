@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { login, refreshAccessToken, register } from "./auth.service";
+import { login, logout, refreshAccessToken, register } from "./auth.service";
 
 export const registerController = async (req: Request, res: Response) => {
   const user = await register(req.body);
@@ -22,7 +22,6 @@ export const loginController = async (req: Request, res: Response) => {
 };
 
 export const refreshTokenController = async (req: Request, res: Response) => {
-
   const { refreshToken } = req.body;
 
   const result = await refreshAccessToken(refreshToken);
@@ -31,5 +30,16 @@ export const refreshTokenController = async (req: Request, res: Response) => {
     success: true,
     message: "Access token refreshed successfully.",
     data: result,
+  });
+};
+
+export const logoutController = async (req: Request, res: Response) => {
+  const { refreshToken } = req.body;
+
+  const result = await logout(refreshToken);
+
+  return res.status(200).json({
+    success: true,
+    message: "Logout successful.",
   });
 };

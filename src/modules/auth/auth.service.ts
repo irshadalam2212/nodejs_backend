@@ -9,6 +9,7 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../../utils/jwt";
+import { randomUUID } from "crypto";
 
 //find user by email
 export const findUserByEmail = async (email: string) => {
@@ -46,6 +47,8 @@ export const findRefreshToken = async (token: string) => {
   });
 };
 
+const familyId = randomUUID();
+
 // save refresh tokenin refreshToken table
 export const saveRefreshToken = async (
   token: string,
@@ -56,6 +59,7 @@ export const saveRefreshToken = async (
     data: {
       token,
       userId,
+      familyId,
       expiresAt,
     },
   });
@@ -133,24 +137,37 @@ export const login = async (data: loginInput) => {
 
 //refreshToken service
 export const refreshAccessToken = async (refreshToken: string) => {
-  // Verify JWT
   const decoded = verifyRefreshToken(refreshToken);
 
-  // Check DB
   const storedToken = await findRefreshToken(refreshToken);
 
   if (!storedToken) {
     throw new AppError(401, "Invalid refresh token");
   }
 
-  // Find User
+  // Reuse detection
+  if (storedToken.revokedAt) {
+    await prisma.refreshToken.updateMany({
+      where: {
+        familyId: storedToken.familyId,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    });
+
+    throw new AppError(
+      401,
+      "Refresh token reuse detected. Please login again.",
+    );
+  }
+
   const user = await findUserById(decoded.userId);
 
   if (!user) {
     throw new AppError(404, "User not found");
   }
 
-  // Generate New Access Token
   const accessToken = generateAccessToken({
     userId: user.id,
     email: user.email,
@@ -165,9 +182,12 @@ export const refreshAccessToken = async (refreshToken: string) => {
   expiresAt.setDate(expiresAt.getDate() + 7);
 
   await prisma.$transaction([
-    prisma.refreshToken.delete({
+    prisma.refreshToken.update({
       where: {
         id: storedToken.id,
+      },
+      data: {
+        revokedAt: new Date(),
       },
     }),
 
@@ -175,6 +195,7 @@ export const refreshAccessToken = async (refreshToken: string) => {
       data: {
         token: newRefreshToken,
         userId: user.id,
+        familyId: storedToken.familyId,
         expiresAt,
       },
     }),
@@ -184,4 +205,22 @@ export const refreshAccessToken = async (refreshToken: string) => {
     accessToken,
     refreshToken: newRefreshToken,
   };
+};
+
+//logout
+export const logout = async (refreshToken: string) => {
+  const storedToken = await findRefreshToken(refreshToken);
+
+  if (!storedToken) {
+    throw new AppError(401, "Invalid refresh token");
+  }
+
+  await prisma.refreshToken.update({
+    where: {
+      id: storedToken.id,
+    },
+    data: {
+      revokedAt: new Date(),
+    },
+  });
 };
