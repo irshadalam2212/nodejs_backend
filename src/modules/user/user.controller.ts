@@ -18,12 +18,16 @@ export const createUserController = async (req: Request, res: Response) => {
 };
 
 export const getAllUsersController = async (req: Request, res: Response) => {
-  const users = await getAllUsers();
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 10;
+
+  const result = await getAllUsers(page, limit);
 
   return res.status(200).json({
     success: true,
     message: "Users retrieved successfully",
-    data: users,
+    data: result.users,
+    pagination: result.pagination,
   });
 };
 

@@ -16,19 +16,38 @@ export const createUser = async (data: CreateUserInput) => {
   });
 };
 
-export const getAllUsers = async () => {
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+export const getAllUsers = async (page: number, limit: number) => {
+  const skip = (page - 1) * limit;
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.user.count(),
+  ]);
 
-  return users;
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    users,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+    },
+  };
 };
 
 export const getUserById = async (id: number) => {
