@@ -1,5 +1,12 @@
 import { Request, Response } from "express";
-import { login, logout, refreshAccessToken, register } from "./auth.service";
+import {
+  forgotPassword,
+  login,
+  logout,
+  refreshAccessToken,
+  register,
+  resetPassword,
+} from "./auth.service";
 
 export const registerController = async (req: Request, res: Response) => {
   const user = await register(req.body);
@@ -36,10 +43,31 @@ export const refreshTokenController = async (req: Request, res: Response) => {
 export const logoutController = async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
 
-  const result = await logout(refreshToken);
+  await logout(refreshToken);
 
   return res.status(200).json({
     success: true,
     message: "Logout successful.",
+  });
+};
+
+export const forgotPasswordController = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  await forgotPassword(email);
+
+  return res.status(200).json({
+    success: true,
+    message:
+      "If an account exists with this email, a password reset link has been sent.",
+  });
+};
+
+export const resetPasswordController = async (req: Request, res: Response) => {
+  const { token, password } = req.body;
+  await resetPassword(token, password);
+  return res.status(200).json({
+    success: true,
+    message: "Password reset successfully.",
   });
 };

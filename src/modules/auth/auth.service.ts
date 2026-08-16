@@ -9,7 +9,9 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../../utils/jwt";
-import { randomUUID } from "crypto";
+import { randomBytes, randomUUID } from "crypto";
+import { hashToken } from "../../utils/token";
+import { sendPasswordResetEmail } from "../../utils/email";
 
 //find user by email
 export const findUserByEmail = async (email: string) => {
@@ -223,4 +225,115 @@ export const logout = async (refreshToken: string) => {
       revokedAt: new Date(),
     },
   });
+};
+
+//forgot password
+export const forgotPassword = async (email: string) => {
+  const user = await findUserByEmail(email);
+
+  // Don't reveal whether the email exists
+  if (!user) {
+    return;
+  }
+
+  // Invalidate previous reset tokens
+  await prisma.passwordResetToken.updateMany({
+    where: {
+      userId: user.id,
+      usedAt: null,
+    },
+    data: {
+      usedAt: new Date(),
+    },
+  });
+
+  // Generate random raw token
+  const resetToken = randomBytes(32).toString("hex");
+
+  // Hash token before storing it
+  const hashedToken = hashToken(resetToken);
+
+  const expiresInMinutes = Number(process.env.PASSWORD_RESET_TOKEN_EXPIRES_IN);
+
+  const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
+
+  await prisma.passwordResetToken.create({
+    data: {
+      token: hashedToken,
+      userId: user.id,
+      expiresAt,
+    },
+  });
+  await sendPasswordResetEmail(user.email, resetToken);
+};
+
+//reset password
+export const resetPassword = async (token: string, newPassword: string) => {
+  const hashedToken = hashToken(token);
+
+  const resetToken = await prisma.passwordResetToken.findUnique({
+    where: {
+      token: hashedToken,
+    },
+  });
+
+  // Token doesn't exist
+  if (!resetToken) {
+    throw new AppError(400, "Invalid or expired reset token.");
+  }
+
+  // Token already used
+  if (resetToken.usedAt) {
+    throw new AppError(400, "Reset token has already been used.");
+  }
+
+  // Token expired
+  if (resetToken.expiresAt < new Date()) {
+    throw new AppError(400, "Reset token has expired.");
+  }
+
+  // Find user
+  const user = await prisma.user.findUnique({
+    where: {
+      id: resetToken.userId,
+    },
+  });
+
+  if (!user) {
+    throw new AppError(404, "User not found.");
+  }
+
+  // Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Update password + mark token used + revoke sessions
+  await prisma.$transaction([
+    prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    }),
+
+    prisma.passwordResetToken.update({
+      where: {
+        id: resetToken.id,
+      },
+      data: {
+        usedAt: new Date(),
+      },
+    }),
+
+    prisma.refreshToken.updateMany({
+      where: {
+        userId: user.id,
+        revokedAt: null,
+      },
+      data: {
+        revokedAt: new Date(),
+      },
+    }),
+  ]);
 };

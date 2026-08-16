@@ -53,9 +53,11 @@ export const globalErrorHandler = (
 
   // Prisma Validation Error
   if (err instanceof PrismaClientValidationError) {
+    console.error("Prisma Validation Error:", err);
     return res.status(400).json({
       success: false,
-      message: "Invalid request data.",
+      // message: "Invalid request data.",
+      message: err.message,
     });
   }
 
