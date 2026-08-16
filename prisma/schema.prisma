@@ -19,7 +19,8 @@ model user {
   password String
   role     user_role @default(USER)
 
-  refreshTokens refreshToken[]
+  refreshTokens       refreshToken[]
+  passwordResetTokens passwordResetToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -34,6 +35,18 @@ model refreshToken {
   familyId  String
   expiresAt DateTime
   revokedAt DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+model passwordResetToken {
+  id     Int    @id @default(autoincrement())
+  token  String @unique
+  userId Int
+  user   user   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  usedAt    DateTime?
 
   createdAt DateTime @default(now())
 }
