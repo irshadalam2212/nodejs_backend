@@ -11,13 +11,15 @@ import { createUserSchema } from "./user.validation";
 import { authenticate } from "../../middleware/auth.middleware";
 import { authorize } from "../../middleware/authorize.middleware";
 import { user_role } from "@prisma/client";
+import { paginationSchema } from "../../validators/pagination.schema";
 
 const router = Router();
 
 router.get(
   "/",
   authenticate,
-  authorize(user_role.ADMIN),
+  validate(paginationSchema, "query"),
+  // authorize(user_role.ADMIN),
   getAllUsersController,
 );
 router.get(
