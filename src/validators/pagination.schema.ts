@@ -5,6 +5,8 @@ export const paginationSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(10),
   role: z.enum(["ADMIN", "USER"]).optional(),
   search: z.string().trim().min(1).max(100).optional(),
+  sortBy: z.enum(["name", "email", "createdAt"]).default("createdAt"),
+  sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
 
 export type PaginationInput = z.infer<typeof paginationSchema>;

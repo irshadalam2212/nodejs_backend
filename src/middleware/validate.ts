@@ -20,6 +20,11 @@ export const validate = (
         errors,
       });
     }
+    
+    res.locals.validated = {
+      ...(res.locals.validated || {}),
+      [source]: result.data,
+    };
 
     next();
   };

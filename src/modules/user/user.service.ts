@@ -22,6 +22,8 @@ export const getAllUsers = async (
   limit: number,
   role?: user_role,
   search?: string,
+  sortBy: "name" | "email" | "createdAt" = "createdAt",
+  sortOrder: "asc" | "desc" = "desc",
 ) => {
   const skip = (page - 1) * limit;
   const where = {
@@ -51,7 +53,7 @@ export const getAllUsers = async (
       skip,
       take: limit,
       orderBy: {
-        createdAt: "desc",
+        [sortBy]: sortOrder,
       },
       select: {
         id: true,
