@@ -2,7 +2,7 @@ import { user_role } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { AppError } from "../../errors/AppError";
 import { CreateUserInput } from "./user.interface";
-import bcrypt from "bcrypt";
+import { GetUsersInput } from "../../validators/pagination.schema";
 
 export const createUser = async (data: CreateUserInput) => {
   return await prisma.user.create({
@@ -17,14 +17,10 @@ export const createUser = async (data: CreateUserInput) => {
   });
 };
 
-export const getAllUsers = async (
-  page: number,
-  limit: number,
-  role?: user_role,
-  search?: string,
-  sortBy: "name" | "email" | "createdAt" = "createdAt",
-  sortOrder: "asc" | "desc" = "desc",
-) => {
+export const getAllUsers = async (params: GetUsersInput) => {
+
+  const { page, limit, role, search, sortBy, sortOrder } = params;
+  
   const skip = (page - 1) * limit;
   const where = {
     ...(role && {

@@ -19,17 +19,9 @@ export const createUserController = async (req: Request, res: Response) => {
 };
 
 export const getAllUsersController = async (req: Request, res: Response) => {
-  const { page, limit, role, search, sortBy, sortOrder } =
-    res.locals.validated.query;
+  const query = res.locals.validated.query;
 
-  const result = await getAllUsers(
-    page,
-    limit,
-    role,
-    search,
-    sortBy,
-    sortOrder,
-  );
+  const result = await getAllUsers(query);
 
   return res.status(200).json({
     success: true,

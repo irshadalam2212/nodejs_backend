@@ -1,6 +1,6 @@
 import z from "zod";
 
-export const paginationSchema = z.object({
+export const getUserSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(10),
   role: z.enum(["ADMIN", "USER"]).optional(),
@@ -9,4 +9,4 @@ export const paginationSchema = z.object({
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
 
-export type PaginationInput = z.infer<typeof paginationSchema>;
+export type GetUsersInput = z.infer<typeof getUserSchema>;
