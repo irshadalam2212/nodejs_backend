@@ -1,3 +1,4 @@
+import { user_role } from "@prisma/client";
 import prisma from "../../config/prisma";
 import { AppError } from "../../errors/AppError";
 import { CreateUserInput } from "./user.interface";
@@ -16,10 +17,37 @@ export const createUser = async (data: CreateUserInput) => {
   });
 };
 
-export const getAllUsers = async (page: number, limit: number) => {
+export const getAllUsers = async (
+  page: number,
+  limit: number,
+  role?: user_role,
+  search?: string,
+) => {
   const skip = (page - 1) * limit;
+  const where = {
+    ...(role && {
+      role,
+    }),
+
+    ...(search && {
+      OR: [
+        {
+          name: {
+            contains: search,
+          },
+        },
+        {
+          email: {
+            contains: search,
+          },
+        },
+      ],
+    }),
+  };
+
   const [users, total] = await Promise.all([
     prisma.user.findMany({
+      where,
       skip,
       take: limit,
       orderBy: {
@@ -34,7 +62,7 @@ export const getAllUsers = async (page: number, limit: number) => {
         updatedAt: true,
       },
     }),
-    prisma.user.count(),
+    prisma.user.count({ where }),
   ]);
 
   const totalPages = Math.ceil(total / limit);
