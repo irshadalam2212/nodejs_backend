@@ -19,6 +19,9 @@ model user {
   password String
   role     user_role @default(USER)
 
+  profileImageUrl      String?
+  profileImagePublicId String?
+
   refreshTokens       refreshToken[]
   passwordResetTokens passwordResetToken[]
 

@@ -7,9 +7,8 @@ import {
   updateUserRole,
 } from "./user.service";
 import { AppError } from "../../errors/AppError";
-import { randomUUID } from "node:crypto";
-import fs from "node:fs/promises";
-import path from "node:path";
+import { uploadBufferToCloudinary } from "../../services/cloudinary.services";
+import prisma from "../../config/prisma";
 
 export const createUserController = async (req: Request, res: Response) => {
   const user = await createUser(req.body);
@@ -77,6 +76,7 @@ export const uploadProfileImageController = async (
     throw new AppError(400, "File is required");
   }
 
+  // 1. Detect actual file type
   const { fileTypeFromBuffer } = await import("file-type");
 
   const detectedType = await fileTypeFromBuffer(req.file.buffer);
@@ -85,42 +85,46 @@ export const uploadProfileImageController = async (
     throw new AppError(400, "Unable to determine file type");
   }
 
-  const extensionMap: Record<string, string> = {
-    "image/jpeg": ".jpg",
-    "image/png": ".png",
-    "image/webp": ".webp",
-  };
+  // 2. Allowed types
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
-  const extension = extensionMap[detectedType.mime];
-
-  if (!extension) {
+  if (!allowedTypes.includes(detectedType.mime)) {
     throw new AppError(400, "Unsupported file type");
   }
 
+  // 3. Compare declared MIME with actual MIME
   if (detectedType.mime !== req.file.mimetype) {
     throw new AppError(400, "File type does not match its contents");
   }
 
-  const uploadDir = path.join(process.cwd(), "uploads");
+  // 4. Upload to Cloudinary
+  const result = await uploadBufferToCloudinary(
+    req.file.buffer,
+    "complete-nodejs/profile-images",
+  );
 
-  await fs.mkdir(uploadDir, {
-    recursive: true,
+  // 5. Update database
+  const user = await prisma.user.update({
+    where: {
+      id: req?.user?.userId,
+    },
+    data: {
+      profileImageUrl: result.secure_url,
+      profileImagePublicId: result.public_id,
+    },
+    select: {
+      id: true,
+      email: true,
+      profileImageUrl: true,
+      profileImagePublicId: true,
+    },
   });
-
-  const filename = `${randomUUID()}${extension}`;
-
-  const filePath = path.join(uploadDir, filename);
-
-  await fs.writeFile(filePath, req.file.buffer);
 
   return res.status(200).json({
     success: true,
-    message: "File uploaded successfully",
+    message: "Profile image uploaded successfully",
     data: {
-      filename,
-      path: `/uploads/${filename}`,
-      size: req.file.size,
-      mimetype: detectedType.mime,
+      user,
     },
   });
 };
