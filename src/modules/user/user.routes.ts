@@ -5,6 +5,7 @@ import {
   getAllUsersController,
   getUserByIdController,
   updateUserRoleController,
+  uploadProfileImageController,
 } from "./user.controller";
 import { validate } from "../../middleware/validate";
 import { createUserSchema } from "./user.validation";
@@ -12,6 +13,7 @@ import { authenticate } from "../../middleware/auth.middleware";
 import { authorize } from "../../middleware/authorize.middleware";
 import { user_role } from "@prisma/client";
 import { getUserSchema } from "../../validators/pagination.schema";
+import { upload } from "../../middleware/upload.middleware";
 
 const router = Router();
 
@@ -46,6 +48,13 @@ router.delete(
   authenticate,
   authorize(user_role.ADMIN),
   deleteUserController,
+);
+
+router.post(
+  "/profile-image",
+  authenticate,
+  upload.single("file"),
+  uploadProfileImageController,
 );
 
 export default router;
