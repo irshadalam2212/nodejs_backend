@@ -6,7 +6,6 @@ import {
   getUserById,
   updateUserRole,
 } from "./user.service";
-import { user_role } from "@prisma/client";
 
 export const createUserController = async (req: Request, res: Response) => {
   const user = await createUser(req.body);
