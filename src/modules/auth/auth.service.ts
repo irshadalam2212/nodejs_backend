@@ -307,33 +307,53 @@ export const resetPassword = async (token: string, newPassword: string) => {
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   // Update password + mark token used + revoke sessions
-  await prisma.$transaction([
-    prisma.user.update({
+  // await prisma.$transaction([
+  //   prisma.user.update({
+  //     where: {
+  //       id: user.id,
+  //     },
+  //     data: {
+  //       password: hashedPassword,
+  //     },
+  //   }),
+
+  //   prisma.passwordResetToken.update({
+  //     where: {
+  //       id: resetToken.id,
+  //     },
+  //     data: {
+  //       usedAt: new Date(),
+  //     },
+  //   }),
+
+  //   prisma.refreshToken.updateMany({
+  //     where: {
+  //       userId: user.id,
+  //       revokedAt: null,
+  //     },
+  //     data: {
+  //       revokedAt: new Date(),
+  //     },
+  //   }),
+  // ]);
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
       where: {
         id: user.id,
       },
       data: {
         password: hashedPassword,
       },
-    }),
-
-    prisma.passwordResetToken.update({
+    });
+    await tx.refreshToken.deleteMany({
+      where: {
+        userId: user.id,
+      },
+    });
+    await tx.passwordResetToken.delete({
       where: {
         id: resetToken.id,
       },
-      data: {
-        usedAt: new Date(),
-      },
-    }),
-
-    prisma.refreshToken.updateMany({
-      where: {
-        userId: user.id,
-        revokedAt: null,
-      },
-      data: {
-        revokedAt: new Date(),
-      },
-    }),
-  ]);
+    });
+  });
 };
