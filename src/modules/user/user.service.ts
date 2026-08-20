@@ -3,6 +3,7 @@ import prisma from "../../config/prisma";
 import { AppError } from "../../errors/AppError";
 import { CreateUserInput } from "./user.interface";
 import { GetUsersInput } from "../../validators/pagination.schema";
+import { getCache, setCache } from "../../services/redis.services";
 
 export const createUser = async (data: CreateUserInput) => {
   return await prisma.user.create({
@@ -18,9 +19,8 @@ export const createUser = async (data: CreateUserInput) => {
 };
 
 export const getAllUsers = async (params: GetUsersInput) => {
-
   const { page, limit, role, search, sortBy, sortOrder } = params;
-  
+
   const skip = (page - 1) * limit;
   const where = {
     ...(role && {
@@ -77,6 +77,19 @@ export const getAllUsers = async (params: GetUsersInput) => {
 };
 
 export const getUserById = async (id: number) => {
+  const cacheKey = `user:${id}`;
+
+  // 1. Check Redis
+  const cachedUser = await getCache(cacheKey);
+
+  if (cachedUser) {
+    console.log("🟢 Cache HIT");
+
+    return cachedUser;
+  }
+  console.log("🔴 Cache MISS");
+
+  // 2. Query MySQL
   const user = await prisma.user.findUnique({
     where: { id },
     select: {
@@ -88,9 +101,15 @@ export const getUserById = async (id: number) => {
       updatedAt: true,
     },
   });
+
   if (!user) {
     throw new AppError(404, "User not found");
   }
+
+  // 3. Store in Redis
+  await setCache(cacheKey, user, 300);
+
+  //4. Return
   return user;
 };
 
